@@ -11,19 +11,44 @@ contract Marketplace {
 
     mapping(address => mapping(uint256 => Listing)) public listings;
 
-    function listNFT(address nftContract, uint256 tokenId, uint256 price) public {
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-        listings[nftContract][tokenId] = Listing(msg.sender, price);
+    function listNFT(
+        address tokenContract,
+        uint256 tokenId,
+        uint256 price
+    ) public {
+        IERC721(tokenContract).transferFrom(msg.sender, address(this), tokenId);
+        listings[tokenContract][tokenId] = Listing(msg.sender, price);
     }
 
-    function buyNFT(address nftContract, uint256 tokenId) public payable {
-        Listing memory listing = listings[nftContract][tokenId];
+    function buyNFT(address tokenContract, uint256 tokenId) public payable {
+        Listing memory listing = listings[tokenContract][tokenId];
         require(listing.price > 0, "NFT not for sale");
         require(msg.value == listing.price, "Incorrect ETH amount");
 
-        delete listings[nftContract][tokenId];
+        delete listings[tokenContract][tokenId];
 
-        payable(listing.seller).transfer(msg.value);
-        IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+        address sellerAddress = listing.seller;
+        bytes memory transferCall = abi.encodeWithSelector(
+            IERC721.transferFrom.selector,
+            address(this),
+            msg.sender,
+            tokenId
+        );
+
+        assembly {
+            pop(call(gas(), sellerAddress, callvalue(), 0, 0, 0, 0))
+
+            pop(
+                call(
+                    gas(),
+                    tokenContract,
+                    0,
+                    add(transferCall, 32),
+                    mload(transferCall),
+                    0,
+                    0
+                )
+            )
+        }
     }
 }
