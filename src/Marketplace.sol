@@ -25,11 +25,9 @@ contract Marketplace {
         require(listing.price > 0, "NFT not for sale");
         require(msg.value == listing.price, "Incorrect ETH amount");
 
-        delete listings[tokenContract][tokenId];
-
         address sellerAddress = listing.seller;
-        bytes memory transferCall = abi.encodeWithSelector(
-            IERC721.transferFrom.selector,
+        bytes memory safeTransferCall = abi.encodeWithSignature(
+            "safeTransferFrom(address,address,uint256)",
             address(this),
             msg.sender,
             tokenId
@@ -43,12 +41,14 @@ contract Marketplace {
                     gas(),
                     tokenContract,
                     0,
-                    add(transferCall, 32),
-                    mload(transferCall),
+                    add(safeTransferCall, 32),
+                    mload(safeTransferCall),
                     0,
                     0
                 )
             )
         }
+
+        delete listings[tokenContract][tokenId];
     }
 }
