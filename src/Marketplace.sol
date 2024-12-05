@@ -26,8 +26,8 @@ contract Marketplace {
         require(msg.value == listing.price, "Incorrect ETH amount");
 
         address sellerAddress = listing.seller;
-        bytes memory safeTransferCall = abi.encodeWithSignature(
-            "safeTransferFrom(address,address,uint256)",
+        bytes memory transferCall = abi.encodeWithSelector(
+            IERC721.transferFrom.selector,
             address(this),
             msg.sender,
             tokenId
@@ -41,8 +41,8 @@ contract Marketplace {
                     gas(),
                     tokenContract,
                     0,
-                    add(safeTransferCall, 32),
-                    mload(safeTransferCall),
+                    add(transferCall, 32),
+                    mload(transferCall),
                     0,
                     0
                 )
