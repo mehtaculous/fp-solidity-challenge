@@ -19,11 +19,13 @@ struct Order {
 }
 
 interface IMarketplace is IMarketplaceEventsAndErrors {
-    function buyNFT(address _nftContract, uint256 _tokenId) external payable;
+    function buy(address _nftContract, uint256 _tokenId) external payable;
 
-    function buyNFT(Order calldata _order, bytes calldata _signature) external payable;
+    function buy(Order calldata _order, bytes calldata _signature) external payable;
 
-    function listNFT(
+    function cancelListing(address _nftContract, uint256 _tokenId) external;
+
+    function createListing(
         address _nftContract,
         uint256 _tokenId,
         uint96 _price,

@@ -22,12 +22,12 @@ contract Marketplace is IMarketplace, EIP712 {
 
     constructor() EIP712("Marketplace", "1") {}
 
-    function listNFT(
+    function createListing(
         address _nftContract,
         uint256 _tokenId,
         uint96 _price,
         address _erc20Token
-    ) public {
+    ) external {
         if (_price == 0) revert InsufficientPrice();
         if (IERC721(_nftContract).ownerOf(_tokenId) != msg.sender) revert NotOwner();
         if (!IERC721(_nftContract).isApprovedForAll(msg.sender, address(this))) revert NotApproved();
@@ -37,7 +37,7 @@ contract Marketplace is IMarketplace, EIP712 {
         emit ListingCreated(_nftContract, _tokenId, msg.sender, _price, _erc20Token);
     }
 
-    function cancelListing(address _nftContract, uint256 _tokenId) public {
+    function cancelListing(address _nftContract, uint256 _tokenId) external {
         Listing memory listing = listings[_nftContract][_tokenId];
         if (listing.seller != msg.sender) revert NotOwner();
 
@@ -46,7 +46,7 @@ contract Marketplace is IMarketplace, EIP712 {
         emit ListingCanceled(_nftContract, _tokenId, msg.sender);
     }
 
-    function buyNFT(address _nftContract, uint256 _tokenId) public payable {
+    function buy(address _nftContract, uint256 _tokenId) external payable {
         Listing memory listing = listings[_nftContract][_tokenId];
         if (listing.price == 0) revert NotForSale();
 
@@ -62,7 +62,7 @@ contract Marketplace is IMarketplace, EIP712 {
         );
     }
 
-    function buyNFT(Order calldata _order, bytes calldata _signature) public payable {
+    function buy(Order calldata _order, bytes calldata _signature) external payable {
         _validateOrder(_order, _signature);
         ++nonces[_order.seller];
 
@@ -103,7 +103,7 @@ contract Marketplace is IMarketplace, EIP712 {
 
         IERC721(_nftContract).safeTransferFrom(_seller, _buyer, _tokenId);
 
-        emit NFTSold(_nftContract, _tokenId, _buyer, _price);
+        emit Purchased(_nftContract, _tokenId, _buyer, _price);
     }
 
     function _validateOrder(Order calldata _order, bytes calldata _signature) internal view {
