@@ -37,6 +37,15 @@ contract Marketplace is IMarketplace, EIP712 {
         emit ListingCreated(_nftContract, _tokenId, msg.sender, _price, _erc20Token);
     }
 
+    function cancelListing(address _nftContract, uint256 _tokenId) public {
+        Listing memory listing = listings[_nftContract][_tokenId];
+        if (listing.seller != msg.sender) revert NotOwner();
+
+        delete listings[_nftContract][_tokenId];
+
+        emit ListingCanceled(_nftContract, _tokenId, msg.sender);
+    }
+
     function buyNFT(address _nftContract, uint256 _tokenId) public payable {
         Listing memory listing = listings[_nftContract][_tokenId];
         if (listing.price == 0) revert NotForSale();

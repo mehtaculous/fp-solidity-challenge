@@ -87,6 +87,31 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         marketplace.listNFT(address(nftContract), tokenId, nftPrice, address(0));
     }
 
+    function test_CancelListing() public {
+        vm.startPrank(seller);
+        nftContract.setApprovalForAll(address(marketplace), true);
+        marketplace.listNFT(address(nftContract), tokenId, nftPrice, address(0));
+        vm.stopPrank();
+
+        vm.prank(seller);
+        marketplace.cancelListing(address(nftContract), tokenId);
+
+        (, uint96 listingPrice,) = marketplace.listings(address(nftContract), tokenId);
+
+        assertEq(listingPrice, 0);
+    }
+
+    function test_CancelListing_RevertsWhen_NotOwner() public {
+        vm.startPrank(seller);
+        nftContract.setApprovalForAll(address(marketplace), true);
+        marketplace.listNFT(address(nftContract), tokenId, nftPrice, address(0));
+        vm.stopPrank();
+
+        vm.expectRevert(NotOwner.selector);
+        vm.prank(buyer);
+        marketplace.cancelListing(address(nftContract), tokenId);
+    }
+
     function test_BuyNFT_WithEther() public {
         vm.startPrank(seller);
         nftContract.setApprovalForAll(address(marketplace), true);
@@ -171,7 +196,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
             erc20Token: address(0),
             expirationTimestamp: expirationTimestamp
         });
-        
+
         vm.warp(expirationTimestamp + 1);
 
         vm.expectRevert(OrderExpired.selector);

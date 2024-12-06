@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "./IMarketplaceEventsAndErrors.sol";
+import {IMarketplaceEventsAndErrors} from "./IMarketplaceEventsAndErrors.sol";
 
 struct Listing {
     address seller;
