@@ -28,9 +28,9 @@ contract Marketplace is IMarketplace, EIP712 {
         uint96 _price,
         address _erc20Token
     ) external {
-        if (_price == 0) revert InsufficientPrice();
-        if (IERC721(_nftContract).ownerOf(_tokenId) != msg.sender) revert NotOwner();
-        if (!IERC721(_nftContract).isApprovedForAll(msg.sender, address(this))) revert NotApproved();
+        if (_price == 0) revert Marketplace__InsufficientPrice();
+        if (IERC721(_nftContract).ownerOf(_tokenId) != msg.sender) revert Marketplace__NotOwner();
+        if (!IERC721(_nftContract).isApprovedForAll(msg.sender, address(this))) revert Marketplace__NotApproved();
 
         listings[_nftContract][_tokenId] = Listing(msg.sender, _price, _erc20Token);
 
@@ -39,7 +39,7 @@ contract Marketplace is IMarketplace, EIP712 {
 
     function cancelListing(address _nftContract, uint256 _tokenId) external {
         Listing memory listing = listings[_nftContract][_tokenId];
-        if (listing.seller != msg.sender) revert NotOwner();
+        if (listing.seller != msg.sender) revert Marketplace__NotOwner();
 
         delete listings[_nftContract][_tokenId];
 
@@ -48,7 +48,7 @@ contract Marketplace is IMarketplace, EIP712 {
 
     function buy(address _nftContract, uint256 _tokenId) external payable {
         Listing memory listing = listings[_nftContract][_tokenId];
-        if (listing.price == 0) revert NotForSale();
+        if (listing.price == 0) revert Marketplace__NotForSale();
 
         delete listings[_nftContract][_tokenId];
 
@@ -94,25 +94,25 @@ contract Marketplace is IMarketplace, EIP712 {
         address _erc20Token
     ) internal {
         if (_erc20Token == address(0)) {
-            if (msg.value != _price) revert InvalidPrice();
+            if (msg.value != _price) revert Marketplace__InvalidPrice();
             (bool success, ) = payable(_seller).call{value: msg.value}("");
-            if (!success) revert ETHTransferFailed();
+            if (!success) revert Marketplace__ETHTransferFailed();
         } else {
             IERC20(_erc20Token).transferFrom(_buyer, _seller, _price);
         }
 
         IERC721(_nftContract).safeTransferFrom(_seller, _buyer, _tokenId);
 
-        emit Purchased(_nftContract, _tokenId, _buyer, _price);
+        emit Purchased(_nftContract, _tokenId, _buyer, _seller, _price);
     }
 
     function _validateOrder(Order calldata _order, bytes calldata _signature) internal view {
-        if (_order.price == 0) revert NotForSale();
-        if (block.timestamp > _order.expirationTimestamp) revert OrderExpired();
+        if (_order.price == 0) revert Marketplace__NotForSale();
+        if (block.timestamp > _order.expirationTimestamp) revert Marketplace__OrderExpired();
 
         uint256 nonce = nonces[_order.seller];
         bytes32 digest = generateOrderHash(_order, nonce);
         address signer = digest.recover(_signature);
-        if (signer != _order.seller) revert InvalidSignature();
+        if (signer != _order.seller) revert Marketplace__InvalidSignature();
     }
 }

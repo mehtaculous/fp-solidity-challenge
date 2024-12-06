@@ -13,15 +13,15 @@ import {IMarketplaceEventsAndErrors} from "../src/IMarketplaceEventsAndErrors.so
 contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
     Marketplace marketplace;
     NFT nftContract;
-    Order order;
     Token erc20Token;
-    
+    Order order;
+
     address buyer;
     address seller;
     uint96 nftPrice;
     uint96 tokenPrice;
-    uint256 tokenId;
     uint96 expirationTimestamp;
+    uint256 tokenId;
 
     uint8 v; 
     bytes32 r; 
@@ -33,6 +33,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
     function setUp() public {
         seller = makeAddr("seller");
         buyer = makeAddr("buyer");
+
         nftContract = new NFT();
         marketplace = new Marketplace();
         erc20Token = new Token(1_000_000);
@@ -67,7 +68,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         vm.prank(seller);
         nftContract.setApprovalForAll(address(marketplace), true);
         
-        vm.expectRevert(InsufficientPrice.selector);
+        vm.expectRevert(Marketplace__InsufficientPrice.selector);
         vm.prank(seller);
         marketplace.createListing(address(nftContract), tokenId, 0, address(0));        
     }
@@ -76,13 +77,13 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         vm.prank(seller);
         nftContract.setApprovalForAll(address(marketplace), true);
 
-        vm.expectRevert(NotOwner.selector);
+        vm.expectRevert(Marketplace__NotOwner.selector);
         vm.prank(buyer);
         marketplace.createListing(address(nftContract), tokenId, nftPrice, address(0));
     }
 
     function test_CreateListing_RevertsWhen_NotApproved() public {
-        vm.expectRevert(NotApproved.selector);
+        vm.expectRevert(Marketplace__NotApproved.selector);
         vm.prank(seller);
         marketplace.createListing(address(nftContract), tokenId, nftPrice, address(0));
     }
@@ -107,7 +108,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         marketplace.createListing(address(nftContract), tokenId, nftPrice, address(0));
         vm.stopPrank();
 
-        vm.expectRevert(NotOwner.selector);
+        vm.expectRevert(Marketplace__NotOwner.selector);
         vm.prank(buyer);
         marketplace.cancelListing(address(nftContract), tokenId);
     }
@@ -143,7 +144,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
     }
 
     function test_Buy_RevertsWhen_NotForSale() public {
-        vm.expectRevert(NotForSale.selector);
+        vm.expectRevert(Marketplace__NotForSale.selector);
         vm.prank(buyer);
         marketplace.buy(address(nftContract), tokenId);
     }
@@ -154,7 +155,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         marketplace.createListing(address(nftContract), tokenId, nftPrice, address(0));
         vm.stopPrank();
 
-        vm.expectRevert(InvalidPrice.selector);
+        vm.expectRevert(Marketplace__InvalidPrice.selector);
         vm.prank(buyer);
         marketplace.buy{value: nftPrice - 1}(address(nftContract), tokenId);
     }
@@ -198,7 +199,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
             expirationTimestamp: expirationTimestamp
         });
 
-        vm.expectRevert(NotForSale.selector);
+        vm.expectRevert(Marketplace__NotForSale.selector);
         vm.prank(buyer);
         marketplace.buy{value: nftPrice}(order, signature);
     }
@@ -216,7 +217,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
 
         vm.warp(expirationTimestamp + 1);
 
-        vm.expectRevert(OrderExpired.selector);
+        vm.expectRevert(Marketplace__OrderExpired.selector);
         vm.prank(buyer);
         marketplace.buy{value: nftPrice}(order, signature);
     }
@@ -237,12 +238,12 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         (v, r, s) = vm.sign(uint256(keccak256("buyer")), digest);
         signature = abi.encodePacked(r, s, v);
 
-        vm.expectRevert(InvalidSignature.selector);
+        vm.expectRevert(Marketplace__InvalidSignature.selector);
         vm.prank(buyer);
         marketplace.buy{value: nftPrice}(order, signature);
     }
 
-    function test_Buy_OffchainOrder_RevertsWhen_InvalidNonce() public {
+    function test_Buy_OffchainOrder_RevertsWhen_DuplicateNonce() public {
         vm.prank(seller);
         nftContract.setApprovalForAll(address(marketplace), true);
         
@@ -269,7 +270,7 @@ contract MarketplaceTest is Test, IMarketplaceEventsAndErrors {
         (v, r, s) = vm.sign(uint256(keccak256("seller")), digest);
         signature = abi.encodePacked(r, s, v);
 
-        vm.expectRevert(InvalidSignature.selector);
+        vm.expectRevert(Marketplace__InvalidSignature.selector);
         vm.prank(buyer);
         marketplace.buy{value: nftPrice}(order, signature);
     }
