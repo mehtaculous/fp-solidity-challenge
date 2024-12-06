@@ -13,21 +13,17 @@ contract Marketplace is IMarketplace, EIP712 {
     using ECDSA for bytes32;
     using SafeERC20 for IERC20;
 
-    bytes32 constant public ORDER_TYPEHASH = keccak256(
-        "Order(address nftContract,uint256 tokenId,address seller,uint96 price,address erc20Token,uint96 expirationTimestamp)"
-    );
+    bytes32 public constant ORDER_TYPEHASH =
+        keccak256(
+            "Order(address nftContract,uint256 tokenId,address seller,uint96 price,address erc20Token,uint96 expirationTimestamp)"
+        );
 
     mapping(address => mapping(uint256 => Listing)) public listings;
     mapping(address => uint256) public nonces;
 
     constructor() EIP712("Marketplace", "1") {}
 
-    function createListing(
-        address _nftContract,
-        uint256 _tokenId,
-        uint96 _price,
-        address _erc20Token
-    ) external {
+    function createListing(address _nftContract, uint256 _tokenId, uint96 _price, address _erc20Token) external {
         if (_price == 0) revert Marketplace__InsufficientPrice();
         if (IERC721(_nftContract).ownerOf(_tokenId) != msg.sender) revert Marketplace__NotOwner();
         if (!IERC721(_nftContract).isApprovedForAll(msg.sender, address(this))) revert Marketplace__NotApproved();
@@ -52,14 +48,7 @@ contract Marketplace is IMarketplace, EIP712 {
 
         delete listings[_nftContract][_tokenId];
 
-        _executeSale(
-            _nftContract, 
-            _tokenId, 
-            listing.seller, 
-            msg.sender, 
-            listing.price, 
-            listing.erc20Token
-        );
+        _executeSale(_nftContract, _tokenId, listing.seller, msg.sender, listing.price, listing.erc20Token);
     }
 
     function buy(Order calldata _order, bytes calldata _signature) external payable {
@@ -70,14 +59,7 @@ contract Marketplace is IMarketplace, EIP712 {
             delete listings[_order.nftContract][_order.tokenId];
         }
 
-        _executeSale(
-            _order.nftContract, 
-            _order.tokenId, 
-            _order.seller, 
-            msg.sender, 
-            _order.price, 
-            _order.erc20Token
-        );
+        _executeSale(_order.nftContract, _order.tokenId, _order.seller, msg.sender, _order.price, _order.erc20Token);
     }
 
     function generateOrderHash(Order calldata _order, uint256 _nonce) public view returns (bytes32) {
@@ -86,11 +68,11 @@ contract Marketplace is IMarketplace, EIP712 {
     }
 
     function _executeSale(
-        address _nftContract, 
-        uint256 _tokenId, 
-        address _seller, 
-        address _buyer, 
-        uint96 _price, 
+        address _nftContract,
+        uint256 _tokenId,
+        address _seller,
+        address _buyer,
+        uint96 _price,
         address _erc20Token
     ) internal {
         if (_erc20Token == address(0)) {

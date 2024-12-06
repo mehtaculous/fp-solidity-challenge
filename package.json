@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "deploy": "forge script script/Deploy.s.sol --rpc-url sepolia --broadcast",
+    "prettier": "prettier --plugin=prettier-plugin-solidity --write 'src/**/*.sol' 'test/**/*.sol'",
+    "test": "forge clean && forge test"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "prettier-plugin-solidity": "^1.1.3"
+  }
+}

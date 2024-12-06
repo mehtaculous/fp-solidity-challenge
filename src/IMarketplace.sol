@@ -25,12 +25,7 @@ interface IMarketplace is IMarketplaceEventsAndErrors {
 
     function cancelListing(address _nftContract, uint256 _tokenId) external;
 
-    function createListing(
-        address _nftContract,
-        uint256 _tokenId,
-        uint96 _price,
-        address _erc20Token
-    ) external;
+    function createListing(address _nftContract, uint256 _tokenId, uint96 _price, address _erc20Token) external;
 
     function generateOrderHash(Order calldata _order, uint256 _nonce) external view returns (bytes32);
 
